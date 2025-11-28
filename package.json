@@ -1,6 +1,6 @@
 {
   "name": "@entro314labs/shared-constants",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Shared constants and configuration across the Entrolytics ecosystem",
   "keywords": [
     "entrolytics",
@@ -10,14 +10,14 @@
   ],
   "author": "Entro314 Labs",
   "license": "MIT",
-  "homepage": "https://github.com/entro314labs/entrolytics-system/tree/main/shared-constants#readme",
+  "homepage": "https://github.com/entro314-labs/shared-constants#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/entro314labs/entrolytics-system.git",
-    "directory": "shared-constants"
+    "url": "git+https://github.com/entro314-labs/shared-constants.git",
+    "directory": "/"
   },
   "bugs": {
-    "url": "https://github.com/entro314labs/entrolytics-system/issues"
+    "url": "https://github.com/entro314-labs/shared-constants/issues"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
