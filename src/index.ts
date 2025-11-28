@@ -9,15 +9,13 @@
 export const API_ENDPOINTS = {
   production: 'https://edge.entrolytics.click',
   development: 'http://localhost:3000',
-} as const
+} as const;
 
 /**
  * Default API host
  */
 export const DEFAULT_API_HOST =
-  process.env.NODE_ENV === 'production'
-    ? API_ENDPOINTS.production
-    : API_ENDPOINTS.development
+  process.env.NODE_ENV === 'production' ? API_ENDPOINTS.production : API_ENDPOINTS.development;
 
 /**
  * Environment variable naming conventions by framework
@@ -78,7 +76,7 @@ export const ENV_VAR_NAMES = {
     host: 'ENTROLYTICS_HOST',
     envFile: '.env',
   },
-} as const
+} as const;
 
 /**
  * CLI configuration constants
@@ -89,7 +87,7 @@ export const CLI_CONFIG = {
   pollIntervalMs: 2000,
   setupTimeoutMs: 300000, // 5 minutes
   minCliVersion: '1.0.0',
-} as const
+} as const;
 
 /**
  * Standard event types
@@ -101,7 +99,7 @@ export const EVENT_TYPES = {
   custom: 'custom',
   error: 'error',
   performance: 'performance',
-} as const
+} as const;
 
 /**
  * HTTP status codes
@@ -119,15 +117,24 @@ export const HTTP_STATUS = {
   tooManyRequests: 429,
   internalServerError: 500,
   serviceUnavailable: 503,
-} as const
+} as const;
 
 /**
  * API route paths
  */
 export const API_ROUTES = {
-  // CLI routes
-  cliToken: '/api/cli/token',
+  // CLI Auth routes
+  cliAuthToken: '/api/auth/cli/token',
+  cliAuthTokens: '/api/auth/cli/tokens',
+  cliToken: '/api/cli/token', // Legacy - deprecated
   cliValidate: '/api/cli/validate',
+
+  // Share routes
+  shareToken: (shareId: string) => `/api/share/${shareId}`,
+
+  // Links routes
+  links: '/api/links',
+  linkRedirect: (slug: string) => `/q/${slug}`,
 
   // Website routes
   websites: '/api/websites',
@@ -146,7 +153,7 @@ export const API_ROUTES = {
   // Health checks
   health: '/api/health',
   healthIntegrations: '/api/health/integrations',
-} as const
+} as const;
 
 /**
  * Onboarding step identifiers
@@ -158,7 +165,7 @@ export const ONBOARDING_STEPS = {
   verify: 'verify',
   complete: 'complete',
   skipped: 'skipped',
-} as const
+} as const;
 
 /**
  * CLI token statuses
@@ -168,7 +175,7 @@ export const CLI_TOKEN_STATUS = {
   used: 'used',
   expired: 'expired',
   revoked: 'revoked',
-} as const
+} as const;
 
 /**
  * User roles
@@ -177,7 +184,7 @@ export const USER_ROLES = {
   admin: 'admin',
   user: 'user',
   viewer: 'viewer',
-} as const
+} as const;
 
 /**
  * Framework package names
@@ -188,8 +195,8 @@ export const FRAMEWORK_PACKAGES = {
   vue: '@entro314labs/entro-vue',
   svelte: '@entro314labs/entro-svelte',
   astro: '@entro314labs/entro-astro',
-  node: '@entro314labs/entro-api',
-} as const
+  node: '@entro314labs/node',
+} as const;
 
 /**
  * Framework detection patterns
@@ -215,12 +222,34 @@ export const FRAMEWORK_PATTERNS = {
     files: ['astro.config.mjs', 'astro.config.ts'],
     dependencies: ['astro'],
   },
-} as const
+} as const;
 
 /**
  * Rate limiting configuration
+ * Updated to match server-side implementation
  */
 export const RATE_LIMITS = {
+  cliTokenExchange: {
+    windowSeconds: 60, // 1 minute
+    maxRequests: 5,
+  },
+  shareTokenGeneration: {
+    windowSeconds: 60, // 1 minute
+    maxRequests: 10,
+  },
+  linkCreation: {
+    windowSeconds: 60, // 1 minute
+    maxRequests: 20,
+  },
+  linkRedirect: {
+    windowSeconds: 60, // 1 minute
+    maxRequests: 100,
+  },
+  apiGeneral: {
+    windowSeconds: 60, // 1 minute
+    maxRequests: 100,
+  },
+  // Legacy (deprecated but kept for backwards compatibility)
   cliTokenGeneration: {
     windowMs: 3600000, // 1 hour
     maxRequests: 10,
@@ -233,7 +262,7 @@ export const RATE_LIMITS = {
     windowMs: 60000, // 1 minute
     maxRequests: 1000,
   },
-} as const
+} as const;
 
 /**
  * Error messages
@@ -246,6 +275,20 @@ export const ERROR_MESSAGES = {
   tokenInvalid: 'Invalid token',
   tokenNotFound: 'Token not found',
   tokenAlreadyUsed: 'Token has already been used',
+  tokenRevoked: 'Token has been revoked',
+  tokenMissingJti: 'Token missing JTI - please re-authenticate',
+  userBanned: 'User account has been banned',
+  userDeleted: 'User account has been deleted',
+
+  // Share tokens
+  shareTokenExpired: 'Share token has expired',
+  shareTokenRevoked: 'Share has been revoked',
+  shareTokenInvalid: 'Invalid share token',
+
+  // URL Validation
+  invalidUrl: 'Invalid URL provided',
+  invalidUrlProtocol: 'URL must use http or https protocol',
+  openRedirectBlocked: 'Open redirect attempt blocked',
 
   // Validation
   invalidInput: 'Invalid input provided',
@@ -256,14 +299,16 @@ export const ERROR_MESSAGES = {
   notFound: 'Resource not found',
   websiteNotFound: 'Website not found',
   userNotFound: 'User not found',
+  linkNotFound: 'Link not found',
 
   // Rate limiting
   tooManyRequests: 'Too many requests. Please try again later.',
+  rateLimitExceeded: 'Rate limit exceeded',
 
   // Server
   internalError: 'Internal server error',
   serviceUnavailable: 'Service temporarily unavailable',
-} as const
+} as const;
 
 /**
  * Success messages
@@ -271,37 +316,53 @@ export const ERROR_MESSAGES = {
 export const SUCCESS_MESSAGES = {
   tokenGenerated: 'Setup token generated successfully',
   tokenValidated: 'Token validated successfully',
+  tokenRevoked: 'Token revoked successfully',
+  allTokensRevoked: 'All tokens revoked successfully',
   websiteCreated: 'Website created successfully',
+  linkCreated: 'Link created successfully',
+  shareCreated: 'Share created successfully',
   onboardingComplete: 'Onboarding completed successfully',
   setupComplete: 'Setup completed successfully',
-} as const
+} as const;
+
+/**
+ * CLI Access Token metadata
+ */
+export interface CliAccessTokenMetadata {
+  jti: string;
+  createdAt: string;
+  expiresAt: string;
+  lastUsedAt: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+}
 
 // Type exports
-export type Framework = keyof typeof ENV_VAR_NAMES
-export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES]
-export type OnboardingStep = (typeof ONBOARDING_STEPS)[keyof typeof ONBOARDING_STEPS]
-export type CliTokenStatus = (typeof CLI_TOKEN_STATUS)[keyof typeof CLI_TOKEN_STATUS]
-export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES]
+export type Framework = keyof typeof ENV_VAR_NAMES;
+export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
+export type OnboardingStep = (typeof ONBOARDING_STEPS)[keyof typeof ONBOARDING_STEPS];
+export type CliTokenStatus = (typeof CLI_TOKEN_STATUS)[keyof typeof CLI_TOKEN_STATUS];
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 /**
  * Utility functions
  */
 export function getEnvVarNames(framework: Framework) {
-  return ENV_VAR_NAMES[framework]
+  return ENV_VAR_NAMES[framework];
 }
 
 export function getFrameworkPackage(framework: Framework) {
-  return FRAMEWORK_PACKAGES[framework as keyof typeof FRAMEWORK_PACKAGES] || null
+  return FRAMEWORK_PACKAGES[framework as keyof typeof FRAMEWORK_PACKAGES] || null;
 }
 
 export function isValidFramework(framework: string): framework is Framework {
-  return framework in ENV_VAR_NAMES
+  return framework in ENV_VAR_NAMES;
 }
 
 export function getApiRoute(route: keyof typeof API_ROUTES, ...args: string[]) {
-  const routeFn = API_ROUTES[route]
+  const routeFn = API_ROUTES[route];
   if (typeof routeFn === 'function') {
-    return routeFn(...args)
+    return (routeFn as (...args: string[]) => string)(...args);
   }
-  return routeFn
+  return routeFn;
 }
