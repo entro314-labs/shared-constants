@@ -1,6 +1,6 @@
 {
   "name": "@entro314labs/shared-constants",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Shared constants and configuration across the Entrolytics ecosystem",
   "keywords": [
     "entrolytics",
