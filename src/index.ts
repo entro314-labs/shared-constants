@@ -4,6 +4,129 @@
  */
 
 /**
+ * Plan definitions and limits
+ */
+export const PLANS = {
+  starter: {
+    id: 'starter',
+    name: 'Starter',
+    price: 0,
+    limits: {
+      pageviewsPerMonth: 25_000,
+      websites: 2,
+      retentionDays: 30,
+      seats: 1,
+    },
+    features: {
+      funnels: false,
+      attribution: false,
+      revenue: false,
+      customDashboards: false,
+      apiAccess: false,
+      weeklyReports: true,
+      support: 'community',
+    },
+  },
+  pro: {
+    id: 'pro',
+    name: 'Pro',
+    price: 29,
+    limits: {
+      pageviewsPerMonth: 250_000,
+      websites: 10,
+      retentionDays: 365,
+      seats: 5,
+    },
+    features: {
+      funnels: true,
+      attribution: true,
+      revenue: true,
+      customDashboards: false,
+      apiAccess: true,
+      weeklyReports: true,
+      support: 'email',
+    },
+  },
+  business: {
+    id: 'business',
+    name: 'Business',
+    price: 99,
+    limits: {
+      pageviewsPerMonth: 1_000_000,
+      websites: -1, // unlimited
+      retentionDays: 730, // 2 years
+      seats: -1, // unlimited
+    },
+    features: {
+      funnels: true,
+      attribution: true,
+      revenue: true,
+      customDashboards: true,
+      apiAccess: true,
+      weeklyReports: true,
+      support: 'priority',
+    },
+  },
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: -1, // custom
+    limits: {
+      pageviewsPerMonth: -1, // custom
+      websites: -1,
+      retentionDays: -1, // custom
+      seats: -1,
+    },
+    features: {
+      funnels: true,
+      attribution: true,
+      revenue: true,
+      customDashboards: true,
+      apiAccess: true,
+      weeklyReports: true,
+      support: 'dedicated',
+      sso: true,
+      auditLogs: true,
+      customRetention: true,
+    },
+  },
+} as const;
+
+/**
+ * Plan feature names for display
+ */
+export const PLAN_FEATURES = {
+  funnels: 'Funnel Analytics',
+  attribution: 'Attribution Reports',
+  revenue: 'Revenue Tracking',
+  customDashboards: 'Custom Dashboards',
+  apiAccess: 'API Access',
+  weeklyReports: 'Weekly Email Reports',
+  sso: 'SSO/SAML',
+  auditLogs: 'Audit Logs',
+  customRetention: 'Custom Data Retention',
+} as const;
+
+/**
+ * Usage warning thresholds (percentages)
+ */
+export const USAGE_THRESHOLDS = {
+  warning: 90,
+  critical: 95,
+} as const;
+
+/**
+ * Billing-related error codes
+ */
+export const BILLING_ERRORS = {
+  quotaExceeded: 'QUOTA_EXCEEDED',
+  planRequired: 'PLAN_REQUIRED',
+  featureNotAvailable: 'FEATURE_NOT_AVAILABLE',
+  subscriptionInactive: 'SUBSCRIPTION_INACTIVE',
+  paymentFailed: 'PAYMENT_FAILED',
+} as const;
+
+/**
  * API endpoint configuration
  */
 export const API_ENDPOINTS = {
@@ -145,6 +268,13 @@ export const API_ROUTES = {
   // User routes
   userOnboarding: '/api/user/onboarding',
   userProfile: '/api/user/profile',
+  userEmailPreferences: '/api/me/email-preferences',
+
+  // Billing routes
+  billingUsage: '/api/billing/usage',
+  billingCheckout: '/api/billing/checkout',
+  billingPortal: '/api/billing/portal',
+  billingWebhook: '/api/billing/webhook',
 
   // Event collection
   collect: '/api/collect',
@@ -343,6 +473,10 @@ export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[keyof typeof ONBOARDING_STEPS];
 export type CliTokenStatus = (typeof CLI_TOKEN_STATUS)[keyof typeof CLI_TOKEN_STATUS];
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+export type PlanId = keyof typeof PLANS;
+export type Plan = (typeof PLANS)[PlanId];
+export type PlanFeature = keyof typeof PLAN_FEATURES;
+export type BillingError = (typeof BILLING_ERRORS)[keyof typeof BILLING_ERRORS];
 
 /**
  * Utility functions
@@ -365,4 +499,42 @@ export function getApiRoute(route: keyof typeof API_ROUTES, ...args: string[]) {
     return (routeFn as (...args: string[]) => string)(...args);
   }
   return routeFn;
+}
+
+/**
+ * Get plan by ID
+ */
+export function getPlan(planId: PlanId): Plan {
+  return PLANS[planId];
+}
+
+/**
+ * Check if a feature is available for a plan
+ */
+export function isPlanFeatureEnabled(planId: PlanId, feature: PlanFeature): boolean {
+  const plan = PLANS[planId];
+  return plan?.features?.[feature as keyof typeof plan.features] === true;
+}
+
+/**
+ * Get plan limit value (-1 means unlimited)
+ */
+export function getPlanLimit(planId: PlanId, limit: keyof Plan['limits']): number {
+  return PLANS[planId]?.limits?.[limit] ?? 0;
+}
+
+/**
+ * Check if usage is at warning threshold
+ */
+export function isUsageWarning(current: number, limit: number): boolean {
+  if (limit <= 0) return false; // unlimited
+  return (current / limit) * 100 >= USAGE_THRESHOLDS.warning;
+}
+
+/**
+ * Check if usage is at critical threshold
+ */
+export function isUsageCritical(current: number, limit: number): boolean {
+  if (limit <= 0) return false; // unlimited
+  return (current / limit) * 100 >= USAGE_THRESHOLDS.critical;
 }
