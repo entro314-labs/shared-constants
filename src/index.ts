@@ -225,6 +225,125 @@ export const EVENT_TYPES = {
 } as const;
 
 /**
+ * Web Vitals metric types (Phase 2)
+ * Core Web Vitals: LCP, INP, CLS
+ * Additional: TTFB, FCP
+ */
+export const VITAL_TYPES = {
+  LCP: 'LCP', // Largest Contentful Paint
+  INP: 'INP', // Interaction to Next Paint (replaced FID)
+  CLS: 'CLS', // Cumulative Layout Shift
+  TTFB: 'TTFB', // Time to First Byte
+  FCP: 'FCP', // First Contentful Paint
+} as const;
+
+/**
+ * Web Vitals rating thresholds
+ */
+export const VITAL_RATINGS = {
+  good: 'good',
+  needsImprovement: 'needs-improvement',
+  poor: 'poor',
+} as const;
+
+/**
+ * Web Vitals thresholds by metric (in milliseconds, except CLS which is unitless)
+ */
+export const VITAL_THRESHOLDS = {
+  LCP: { good: 2500, poor: 4000 },
+  INP: { good: 200, poor: 500 },
+  CLS: { good: 0.1, poor: 0.25 },
+  TTFB: { good: 800, poor: 1800 },
+  FCP: { good: 1800, poor: 3000 },
+} as const;
+
+/**
+ * Navigation types for Web Vitals context
+ */
+export const NAVIGATION_TYPES = {
+  navigate: 'navigate',
+  reload: 'reload',
+  backForward: 'back-forward',
+  backForwardCache: 'back-forward-cache',
+  prerender: 'prerender',
+  restore: 'restore',
+} as const;
+
+/**
+ * Form event types (Phase 2)
+ */
+export const FORM_EVENT_TYPES = {
+  start: 'start', // Form interaction started
+  fieldFocus: 'field_focus', // Field received focus
+  fieldBlur: 'field_blur', // Field lost focus
+  fieldError: 'field_error', // Field validation error
+  submit: 'submit', // Form submitted
+  abandon: 'abandon', // Form abandoned (left page)
+} as const;
+
+/**
+ * Form field types
+ */
+export const FORM_FIELD_TYPES = {
+  text: 'text',
+  email: 'email',
+  password: 'password',
+  tel: 'tel',
+  number: 'number',
+  url: 'url',
+  textarea: 'textarea',
+  select: 'select',
+  checkbox: 'checkbox',
+  radio: 'radio',
+  date: 'date',
+  file: 'file',
+  hidden: 'hidden',
+  submit: 'submit',
+  other: 'other',
+} as const;
+
+/**
+ * Deployment platform sources (Phase 2)
+ */
+export const DEPLOYMENT_SOURCES = {
+  vercel: 'vercel',
+  netlify: 'netlify',
+  cloudflare: 'cloudflare',
+  railway: 'railway',
+  render: 'render',
+  fly: 'fly',
+  heroku: 'heroku',
+  aws: 'aws',
+  gcp: 'gcp',
+  azure: 'azure',
+  custom: 'custom',
+} as const;
+
+/**
+ * Deployment environment variables by platform
+ */
+export const DEPLOYMENT_ENV_VARS = {
+  vercel: {
+    deployId: 'VERCEL_DEPLOYMENT_ID',
+    gitSha: 'VERCEL_GIT_COMMIT_SHA',
+    gitBranch: 'VERCEL_GIT_COMMIT_REF',
+    url: 'VERCEL_URL',
+  },
+  netlify: {
+    deployId: 'DEPLOY_ID',
+    gitSha: 'COMMIT_REF',
+    gitBranch: 'BRANCH',
+    url: 'DEPLOY_URL',
+  },
+  cloudflare: {
+    deployId: 'CF_PAGES_COMMIT_SHA',
+    gitSha: 'CF_PAGES_COMMIT_SHA',
+    gitBranch: 'CF_PAGES_BRANCH',
+    url: 'CF_PAGES_URL',
+  },
+} as const;
+
+/**
  * HTTP status codes
  */
 export const HTTP_STATUS = {
@@ -279,6 +398,13 @@ export const API_ROUTES = {
   // Event collection
   collect: '/api/collect',
   send: '/api/send',
+
+  // Phase 2: Web Vitals, Forms, Deployments (NG only)
+  collectVitals: '/api/collect/vitals',
+  collectForms: '/api/collect/forms',
+  websiteVitals: (id: string) => `/api/websites/${id}/vitals`,
+  websiteForms: (id: string) => `/api/websites/${id}/forms`,
+  websiteDeployments: (id: string) => `/api/websites/${id}/deployments`,
 
   // Health checks
   health: '/api/health',
@@ -478,6 +604,57 @@ export type Plan = (typeof PLANS)[PlanId];
 export type PlanFeature = keyof typeof PLAN_FEATURES;
 export type BillingError = (typeof BILLING_ERRORS)[keyof typeof BILLING_ERRORS];
 
+// Phase 2 type exports
+export type VitalType = (typeof VITAL_TYPES)[keyof typeof VITAL_TYPES];
+export type VitalRating = (typeof VITAL_RATINGS)[keyof typeof VITAL_RATINGS];
+export type NavigationType = (typeof NAVIGATION_TYPES)[keyof typeof NAVIGATION_TYPES];
+export type FormEventType = (typeof FORM_EVENT_TYPES)[keyof typeof FORM_EVENT_TYPES];
+export type FormFieldType = (typeof FORM_FIELD_TYPES)[keyof typeof FORM_FIELD_TYPES];
+export type DeploymentSource = (typeof DEPLOYMENT_SOURCES)[keyof typeof DEPLOYMENT_SOURCES];
+
+/**
+ * Web Vital data structure for SDK tracking
+ */
+export interface WebVitalData {
+  metric: VitalType;
+  value: number;
+  rating: VitalRating;
+  delta?: number;
+  id?: string;
+  navigationType?: NavigationType;
+  attribution?: Record<string, unknown>;
+  url?: string;
+  path?: string;
+}
+
+/**
+ * Form event data structure for SDK tracking
+ */
+export interface FormEventData {
+  eventType: FormEventType;
+  formId: string;
+  formName?: string;
+  urlPath: string;
+  fieldName?: string;
+  fieldType?: FormFieldType;
+  fieldIndex?: number;
+  timeOnField?: number;
+  timeSinceStart?: number;
+  errorMessage?: string;
+  success?: boolean;
+}
+
+/**
+ * Deployment context for SDK tracking
+ */
+export interface DeploymentContext {
+  deployId: string;
+  gitSha?: string;
+  gitBranch?: string;
+  deployUrl?: string;
+  source?: DeploymentSource;
+}
+
 /**
  * Utility functions
  */
@@ -537,4 +714,75 @@ export function isUsageWarning(current: number, limit: number): boolean {
 export function isUsageCritical(current: number, limit: number): boolean {
   if (limit <= 0) return false; // unlimited
   return (current / limit) * 100 >= USAGE_THRESHOLDS.critical;
+}
+
+/**
+ * Calculate Web Vital rating from value (Phase 2)
+ */
+export function getVitalRating(metric: VitalType, value: number): VitalRating {
+  const thresholds = VITAL_THRESHOLDS[metric];
+  if (value <= thresholds.good) return 'good';
+  if (value <= thresholds.poor) return 'needs-improvement';
+  return 'poor';
+}
+
+/**
+ * Detect deployment context from environment variables (Phase 2)
+ * Works in Node.js environments only - returns null in browser
+ */
+export function detectDeploymentContext(): DeploymentContext | null {
+  // Safe access to process.env in any environment
+  const env = getEnv();
+  if (!env) return null;
+
+  // Vercel
+  if (env.VERCEL_DEPLOYMENT_ID) {
+    return {
+      deployId: env.VERCEL_DEPLOYMENT_ID,
+      gitSha: env.VERCEL_GIT_COMMIT_SHA,
+      gitBranch: env.VERCEL_GIT_COMMIT_REF,
+      deployUrl: env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined,
+      source: 'vercel',
+    };
+  }
+
+  // Netlify
+  if (env.DEPLOY_ID) {
+    return {
+      deployId: env.DEPLOY_ID,
+      gitSha: env.COMMIT_REF,
+      gitBranch: env.BRANCH,
+      deployUrl: env.DEPLOY_URL,
+      source: 'netlify',
+    };
+  }
+
+  // Cloudflare Pages
+  if (env.CF_PAGES_COMMIT_SHA) {
+    return {
+      deployId: env.CF_PAGES_COMMIT_SHA,
+      gitSha: env.CF_PAGES_COMMIT_SHA,
+      gitBranch: env.CF_PAGES_BRANCH,
+      deployUrl: env.CF_PAGES_URL,
+      source: 'cloudflare',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Safe environment variable access (works in browser and Node.js)
+ */
+function getEnv(): Record<string, string | undefined> | null {
+  try {
+    // Check if we're in a Node.js-like environment
+    if (typeof globalThis !== 'undefined' && 'process' in globalThis) {
+      const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+      return proc?.env ?? null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
